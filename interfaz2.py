@@ -140,33 +140,29 @@ st.write(met_df.style.background_gradient(cmap='PuBu').bar(subset=['Valor'], col
 # Matriz de confusión
 if st.sidebar.checkbox("Mostrar matriz de confusión"):
     st.subheader("📉 Matriz de Confusión")
-    fig, ax = plt.subplots()
-    ConfusionMatrixDisplay.from_estimator(clf, X_test, y_test, ax=ax, cmap='PuBu')
+    class_names = encoders[target].inverse_transform(np.sort(y.unique()))
+    fig, ax = plt.subplots(figsize=(5, 3))  # Tamaño más pequeño
+    ConfusionMatrixDisplay.from_estimator(
+        clf, X_test, y_test, ax=ax, cmap='PuBu', display_labels=class_names
+    )
     ax.set_title("Matriz de Confusión")
     st.pyplot(fig)
 
-# Curva ROC
 if st.sidebar.checkbox("Mostrar curva ROC"):
     st.subheader("📈 Curva ROC")
     binarizer = LabelBinarizer().fit(y_train)
     y_test_bin = binarizer.transform(y_test)
-    fig_roc, ax = plt.subplots()
+    fig_roc, ax = plt.subplots(figsize=(5, 3))  # Tamaño reducido
+    class_names = encoders[target].inverse_transform(clf.classes_)
+
     for i in range(len(clf.classes_)):
         fpr, tpr, _ = roc_curve(y_test_bin[:, i], y_prob[:, i])
         roc_auc = roc_auc_score(y_test_bin[:, i], y_prob[:, i])
-        ax.plot(fpr, tpr, label=f'Clase {i} (AUC={roc_auc:.2f})')
+        ax.plot(fpr, tpr, label=f'{class_names[i]} (AUC={roc_auc:.2f})')
+
     ax.plot([0, 1], [0, 1], 'k--')
     ax.legend()
-    ax.set_xlabel('FPR')
-    ax.set_ylabel('TPR')
-    ax.set_title('Curva ROC')
+    ax.set_xlabel('Tasa de Falsos Positivos (FPR)')
+    ax.set_ylabel('Tasa de Verdaderos Positivos (TPR)')
+    ax.set_title('Curva ROC por clase')
     st.pyplot(fig_roc)
-
-# Curva de aprendizaje
-if st.sidebar.checkbox("Mostrar curva de aprendizaje"):
-    st.subheader("📉 Bias vs Variance")
-    fig_bias = plt.figure()
-    plot_learning_curves(X_train, y_train, X_test, y_test, clf, style='fast', test_marker='o')
-    plt.xlabel("Número de muestras de entrenamiento")
-    plt.ylabel("Error")
-    st.pyplot(fig_bias)
